@@ -7,7 +7,6 @@
 # --------------------------------------------------------------------------
 
 import numpy as np
-from sympy.functions.special.bessel import yn
 
 from utils import polynomial
 from numpy.linalg import inv
@@ -72,8 +71,8 @@ def regularized_least_squares(x_train, y_train, M, regularization_lambda):
     '''
 
     phi = design_matrix(x_train, M)
-    ones = np.eye(phi.shape[1])
-    w = inv(phi.transpose() @ phi + regularization_lambda * ones) @ phi.transpose() @ y_train
+    eye = np.eye(phi.shape[1])
+    w = inv(phi.transpose() @ phi + regularization_lambda * eye) @ phi.transpose() @ y_train
     return w, mean_squared_error(x_train, y_train, w)
 
 
