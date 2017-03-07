@@ -27,6 +27,7 @@ def mean_squared_error(x, y, w):
     # print("6: ",((y - polynomial(x, w)) ** 2).sum())
     # print("7: ",x.shape[0])
     # print("8: ",((y - polynomial(x, w)) ** 2).sum() / x.shape[0])
+    # np.set_printoptions(precision=2, suppress=True)
     return ((y - polynomial(x, w)) ** 2).sum() / y.shape[0]
 
 
@@ -37,10 +38,9 @@ def design_matrix(x_train, M):
     :return: funkcja wylicza Design Matrix Nx(M+1) dla wielomianu rzedu M
     '''
 
-    np.set_printoptions(precision=2, suppress=True)
-    m = np.array([], dtype=np.double).reshape(x_train.shape[0], 0)
+    m = x_train @ np.ones(shape=(1,M+1))
     for i in range(0, M + 1):
-        m = np.concatenate([m, x_train ** i], axis=1)
+        m[:,i] **= i
     return m
 
 
@@ -53,10 +53,9 @@ def least_squares(x_train, y_train, M):
     dopasowania
     '''
 
-    phi = design_matrix(x_train,M)
+    phi = design_matrix(x_train, M)
     w = np.linalg.inv(phi.transpose() @ phi) @ phi.transpose() @ y_train
-    return (w, mean_squared_error(x_train,y_train,w))
-    pass
+    return (w, mean_squared_error(x_train, y_train, w))
 
 
 def regularized_least_squares(x_train, y_train, M, regularization_lambda):
