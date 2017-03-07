@@ -42,7 +42,7 @@ def design_matrix(x_train, M):
     '''
 
     m = x_train @ np.ones(shape=(1, M + 1))
-    for i in range(0, M + 1):
+    for i in range(M + 1):
         m[:, i] **= i
     return m
 
