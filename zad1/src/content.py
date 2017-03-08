@@ -55,9 +55,10 @@ def least_squares(x_train, y_train, M):
     dopasowania
     '''
 
-    phi = design_matrix(x_train, M)
-    w = inv(phi.transpose() @ phi) @ phi.transpose() @ y_train
-    return w, mean_squared_error(x_train, y_train, w)
+    # phi = design_matrix(x_train, M)
+    # w = inv(phi.transpose() @ phi) @ phi.transpose() @ y_train
+    # return w, mean_squared_error(x_train, y_train, w)
+    return regularized_least_squares(x_train,y_train,M,0)
 
 
 def regularized_least_squares(x_train, y_train, M, regularization_lambda):
@@ -71,7 +72,7 @@ def regularized_least_squares(x_train, y_train, M, regularization_lambda):
     '''
 
     phi = design_matrix(x_train, M)
-    identity = np.identity(phi.shape[1])
+    identity = np.identity(phi.shape[1]) if regularization_lambda != 0 else 0
     w = inv(phi.transpose() @ phi + regularization_lambda * identity) @ phi.transpose() @ y_train
     return w, mean_squared_error(x_train, y_train, w)
 
