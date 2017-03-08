@@ -71,8 +71,8 @@ def regularized_least_squares(x_train, y_train, M, regularization_lambda):
     '''
 
     phi = design_matrix(x_train, M)
-    eye = np.eye(phi.shape[1])
-    w = inv(phi.transpose() @ phi + regularization_lambda * eye) @ phi.transpose() @ y_train
+    identity = np.identity(phi.shape[1])
+    w = inv(phi.transpose() @ phi + regularization_lambda * identity) @ phi.transpose() @ y_train
     return w, mean_squared_error(x_train, y_train, w)
 
 
