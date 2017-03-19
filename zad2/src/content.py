@@ -8,19 +8,45 @@
 
 from __future__ import division
 import numpy as np
-
+import datetime
 
 
 def hamming_distance(X, X_train):
+    now = datetime.datetime.now()
+    print(now)
     """
     :param X: zbior porownwanych obiektow N1xD
     :param X_train: zbior obiektow do ktorych porownujemy N2xD
     Funkcja wyznacza odleglosci Hamminga obiektow ze zbioru X od
-    obiektow X_train. ODleglosci obiektow z jednego i drugiego
+    obiektow X_train. Odleglosci obiektow z jednego i drugiego
     zbioru zwrocone zostana w postaci macierzy
     :return: macierz odleglosci pomiedzy obiektami z X i X_train N1xN2
     """
-    pass
+    D = X.shape[1]
+    N2 = X_train.shape[0]
+
+    def diff(x):
+        if x==100000:
+            print(datetime.datetime.now())
+            print(datetime.datetime.now()-now)
+        x1 = X[x / N2].tobsr().indices
+        x2 = X_train[x % N2].tobsr().indices
+        x1Last = len(x1) - 1
+        x2Last = len(x2) - 1
+        k = 0
+        l = 0
+        sum = 0
+        for i in range(D):
+            sum += (x1[k] == x2[l]) | ((x1[k] != i) & (x2[l] != i))
+            if i == x1[k]:
+                k = min(k + 1, x1Last)
+            if i == x2[l]:
+                l = min(l + 1, x2Last)
+        return D - sum
+
+    array = [diff(xi) for xi in range(X.shape[0] * X_train.shape[0])]
+    np_array = np.array(array)
+    return np_array.reshape((X.shape[0], X_train.shape[0]))
 
 
 def sort_train_labels_knn(Dist, y):
