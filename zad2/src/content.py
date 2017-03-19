@@ -9,6 +9,7 @@
 from __future__ import division
 import numpy as np
 import datetime
+import scipy.spatial.distance as dist
 
 
 def hamming_distance(X, X_train):
@@ -25,10 +26,11 @@ def hamming_distance(X, X_train):
     N2 = X_train.shape[0]
 
     def diff(x):
-        if x==100000:
+        if x == 100000:
             print(datetime.datetime.now())
-            print(datetime.datetime.now()-now)
-        return sum(X[x / N2].toarray()[0] ^ X_train[x % N2].toarray()[0])
+            print(datetime.datetime.now() - now)
+
+        return 20 * dist.hamming(X[x / N2].toarray()[0], X_train[x % N2].toarray()[0])
 
     return np.array([diff(xi) for xi in range(X.shape[0] * X_train.shape[0])]).reshape((X.shape[0], X_train.shape[0]))
 
