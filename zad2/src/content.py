@@ -13,8 +13,6 @@ import scipy.spatial.distance as dist
 
 
 def hamming_distance(X, X_train):
-    now = datetime.datetime.now()
-    print(now)
     """
     :param X: zbior porownwanych obiektow N1xD
     :param X_train: zbior obiektow do ktorych porownujemy N2xD
@@ -23,16 +21,12 @@ def hamming_distance(X, X_train):
     zbioru zwrocone zostana w postaci macierzy
     :return: macierz odleglosci pomiedzy obiektami z X i X_train N1xN2
     """
+
+    X = X.toarray()
+    X_train = X_train.toarray()
+    N1 = X.shape[0]
     N2 = X_train.shape[0]
-
-    def diff(x):
-        if x == 100000:
-            print(datetime.datetime.now())
-            print(datetime.datetime.now() - now)
-
-        return 20 * dist.hamming(X[x / N2].toarray()[0], X_train[x % N2].toarray()[0])
-
-    return np.array([diff(xi) for xi in range(X.shape[0] * X_train.shape[0])]).reshape((X.shape[0], X_train.shape[0]))
+    return np.array([X.shape[1] * dist.hamming(X[x / N2], X_train[x % N2]) for x in range(N1 * N2)]).reshape((N1, N2))
 
 
 def sort_train_labels_knn(Dist, y):
