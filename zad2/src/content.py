@@ -21,8 +21,6 @@ def hamming_distance(X, X_train):
     zbioru zwrocone zostana w postaci macierzy
     :return: macierz odleglosci pomiedzy obiektami z X i X_train N1xN2
     """
-<<<<<<< HEAD
-
     X = X.toarray()
     X_train = X_train.toarray()
 
@@ -33,15 +31,6 @@ def hamming_distance(X, X_train):
     f = np.vectorize(f)
     return np.fromfunction(f, shape=(X.shape[0], X_train.shape[0]), dtype=int)
     # return np.array([X.shape[1] * dist.hamming(X[x / N2], X_train[x % N2]) for x in range(N1 * N2)]).reshape((N1, N2))
-=======
-
-    X = X.toarray()
-    X_train = X_train.toarray()
-    N1 = X.shape[0]
-    N2 = X_train.shape[0]
-    return np.array([X.shape[1] * dist.hamming(X[x / N2], X_train[x % N2]) for x in range(N1 * N2)]).reshape((N1, N2))
->>>>>>> 1cbfb431423a1b8a327143cffb67f3f7a06161b1
-
 
 def sort_train_labels_knn(Dist, y):
     """
