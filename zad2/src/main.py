@@ -14,7 +14,6 @@ from content import (hamming_distance, sort_train_labels_knn, model_selection_kn
 import numpy as np
 import matplotlib.pyplot as plt
 import pickle
-from wordcloud import WordCloud
 import warnings
 from time import sleep
 from test import TestRunner
@@ -71,6 +70,7 @@ def classification_KNN_vs_no_neighbours(xs, ys):
 
 
 def word_cloud(frequencies, title):
+    from wordcloud import WordCloud
     wordcloud = WordCloud(font_path='assets/DroidSansMono.ttf',
                           relative_scaling=1.0).generate_from_frequencies(frequencies)
     plt.title(title)
@@ -111,7 +111,6 @@ def load_data():
 def run_training():
 
     data = load_data()
-    Dist = hamming_distance(data['Xtest'], data['Xtrain'])
 
     # KNN model selection
     k_values = range(1, 201, 2)
@@ -119,14 +118,13 @@ def run_training():
     print('-------------------- Wartosci k: 1, 3, ..., 200 -----------------------')
     print('--------------------- To moze potrwac ok. 1 min ------------------------')
 
-    error_best, best_k, errors = model_selection_knn(data['Xtrain'],
-                                                     data['Xval'],
-                                                     data['ytrain'],
+    error_best, best_k, errors = model_selection_knn(data['Xval'],
+                                                     data['Xtrain'],
                                                      data['yval'],
+                                                     data['ytrain'],
                                                      k_values)
     print('Najlepsze k: {num1} i najlepszy blad: {num2:.4f}'.format(num1=best_k, num2=error_best))
     print('\n--- Wcisnij klawisz, aby kontynuowac ---')
-
     classification_KNN_vs_no_neighbours(k_values, errors)
     a_values = [1, 3, 10, 30, 100, 300, 1000]
     b_values = [1, 3, 10, 30, 100, 300, 1000]
@@ -152,9 +150,13 @@ def run_training():
     words = {}
     for x in range(classes_no):
         indices = np.argsort(p_x_y[x, :])[::-1][:50]
-        words[groupnames[x]] = zip(data['wordlist'][indices], p_x_y[x, indices])
+        words[groupnames[x]] = {word: prob for word, prob in zip(data['wordlist'][indices], p_x_y[x, indices])}
 
-    word_clouds(words.values(), words.keys())
+    try:
+        word_clouds(words.values(), words.keys())
+    except Exception:
+        print('---Wystapil problem z biblioteka wordcloud--- ')
+
     print('\n--- Wcisnij klawisz, aby kontynuowac ---')
 
     print('\n----------------Porownanie bledow dla KNN i NB---------------------')
@@ -174,6 +176,6 @@ def run_training():
 
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
-    run_training()
     run_unittests()
+    run_training()
 
