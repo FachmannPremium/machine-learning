@@ -10,6 +10,7 @@
 # --------------------------------------------------------------------------
 
 import logging
+import numpy as np
 import pickle
 import sys
 from unittest import TestCase, makeSuite, TextTestRunner, TestSuite
@@ -48,42 +49,6 @@ class TestSuite(TestSuite):
         self.addTest(makeSuite(TestModelSelectionNB))
 
 
-class TestWithConfirmation(TestCase):
-    def setUp(self):
-
-        self.log = logging.getLogger(str(self))
-        self.log.level = logging.DEBUG
-        stream_handler = logging.StreamHandler(sys.stdout)
-        self.log.addHandler(stream_handler)
-
-    def assertAlmostEqual(self, first, second, places=None, msg=None, delta=None, success_msg=None):
-        try:
-            super(TestWithConfirmation, self).assertAlmostEqual(self, first, second, places, msg, delta)
-            if success_msg:
-                self.log.info(success_msg)
-        except self.failureException:
-            if msg:
-                self.log.info(msg)
-
-    def assertTrue(self, expr, msg=None, success_msg=None):
-        try:
-            super(TestWithConfirmation, self).assertTrue(expr, msg)
-            if success_msg:
-                self.log.info(success_msg)
-        except self.failureException:
-            if msg:
-                self.log.info(msg)
-
-    def assertEquals(self, first, second, msg=None, success_msg=None):
-        try:
-            super(TestWithConfirmation, self).assertEquals(first, second, msg)
-            if success_msg:
-                self.log.info(success_msg)
-        except self.failureException:
-            if msg:
-                self.log.info(msg)
-
-
 class TestHamming(TestCase):
     def test_hamming_distance(self):
         data = test_data['hamming_distance']
@@ -102,14 +67,15 @@ class TestPYXKNN(TestCase):
     def test_p_y_x_knn(self):
         data = test_data['p_y_x_KNN']
         out = p_y_x_knn(data['y'], data['K'])
-        self.assertTrue((out == data['p_y_x']).all())
+        max_diff = np.max(np.abs(data['p_y_x'] - out))
+        self.assertAlmostEqual(max_diff, 0, 8)
 
 
 class TestClassificationError(TestCase):
     def test_classification_error(self):
         data = test_data['error_fun']
         out = classification_error(data['p_y_x'], data['y_true'])
-        self.assertEquals(out, data['error_val'])
+        self.assertAlmostEqual(out, data['error_val'], 8)
 
 
 class TestModelSelectionKNN(TestCase):
@@ -117,7 +83,7 @@ class TestModelSelectionKNN(TestCase):
         data = test_data['model_selection_KNN']
 
         out = model_selection_knn(data['Xval'], data['Xtrain'], data['yval'], data['ytrain'], data['K_values'])
-        self.assertEquals(out[0], data['error_best'])
+        self.assertAlmostEquals(out[0], data['error_best'], 8)
 
     def test_model_selection_knn_best_k(self):
         data = test_data['model_selection_KNN']
@@ -129,28 +95,33 @@ class TestModelSelectionKNN(TestCase):
         data = test_data['model_selection_KNN']
 
         out = model_selection_knn(data['Xval'], data['Xtrain'], data['yval'], data['ytrain'], data['K_values'])
-        self.assertTrue((out[2] == data['errors']).all())
+
+        max_diff = np.max(np.abs(data['errors'] - out[2]))
+        self.assertAlmostEqual(max_diff, 0, 8)
 
 
 class TestEstimateAPrioriNB(TestCase):
     def test_estimate_a_priori_nb(self):
         data = test_data['estimate_a_priori_NB']
         out = estimate_a_priori_nb(data['ytrain'])
-        self.assertTrue((out == data['p_y']).all())
+        max_diff = np.max(np.abs(data['p_y'] - out))
+        self.assertAlmostEqual(max_diff, 0, 8)
 
 
 class TestEstimatePXYNB(TestCase):
     def test_estimate_p_x_y_nb(self):
         data = test_data['estimate_p_x_y_NB']
         out = estimate_p_x_y_nb(data['Xtrain'], data['ytrain'], data['a'], data['b'])
-        self.assertTrue((out == data['p_x_y']).all())
+        max_diff = np.max(np.abs(data['p_x_y'] - out))
+        self.assertAlmostEqual(max_diff, 0, 8)
 
 
 class TestPYXNB(TestCase):
     def test_p_y_x_nb(self):
         data = test_data['p_y_x_NB']
         out = p_y_x_nb(data['p_y'], data['p_x_1_y'], data['X'])
-        self.assertTrue((out == data['p_y_x']).all())
+        max_diff = np.max(np.abs(data['p_y_x'] - out))
+        self.assertAlmostEqual(max_diff, 0, 8)
 
 
 class TestModelSelectionNB(TestCase):
@@ -160,7 +131,7 @@ class TestModelSelectionNB(TestCase):
                                                                 data['yval'], data['a_values'], data['b_values'])
         expected_error_best, expected_best_a, expected_best_b, expected_errors = \
             data['error_best'], data['best_a'], data['best_b'], data['errors']
-        self.assertEquals(error_best, expected_error_best)
+        self.assertAlmostEqual(error_best, expected_error_best)
 
     def test_model_selection_nb_best_a(self):
         data = test_data['model_selection_NB']
@@ -184,4 +155,6 @@ class TestModelSelectionNB(TestCase):
                                                                 data['yval'], data['a_values'], data['b_values'])
         expected_error_best, expected_best_a, expected_best_b, expected_errors = \
             data['error_best'], data['best_a'], data['best_b'], data['errors']
-        self.assertTrue((errors == expected_errors).all())
+
+        max_diff = np.max(np.abs(expected_errors - errors))
+        self.assertAlmostEqual(max_diff, 0, 8)

@@ -111,6 +111,7 @@ def load_data():
 def run_training():
 
     data = load_data()
+    Dist = hamming_distance(data['Xtest'], data['Xtrain'])
 
     # KNN model selection
     k_values = range(1, 201, 2)
@@ -173,6 +174,6 @@ def run_training():
 
 if __name__ == "__main__":
     warnings.filterwarnings("ignore")
-    run_unittests()
     run_training()
+    run_unittests()
 
