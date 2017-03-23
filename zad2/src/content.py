@@ -68,7 +68,7 @@ def p_y_x_knn(y, k):
         return np.count_nonzero(y[yi, :k] == (kj + 1)) / k
 
     f = np.vectorize(f)
-    return np.fromfunction(f, shape=(y.shape[0], 4), dtype=float)
+    return np.fromfunction(f, shape=(y.shape[0], 4), dtype=int)
 
 
 def classification_error(p_y_x, y_true):
@@ -151,7 +151,7 @@ def estimate_p_x_y_nb(Xtrain, ytrain, a, b):
         return up / down
 
     g = np.vectorize(f)
-    return np.fromfunction(g, shape=(4, Xtrain.shape[1]), dtype=float)
+    return np.fromfunction(g, shape=(4, Xtrain.shape[1]), dtype=int)
 
 
 def p_y_x_nb(p_y, p_x_1_y, X):
@@ -163,7 +163,6 @@ def p_y_x_nb(p_y, p_x_1_y, X):
     Bayesa. Funkcja zwraca macierz p_y_x o wymiarach NxM.
     """
     N = np.shape(X)[0]
-    D = np.shape(X)[1]
     M = np.shape(p_y)[0]
     X = X.toarray()
 
@@ -178,8 +177,7 @@ def p_y_x_nb(p_y, p_x_1_y, X):
         return np.prod(np.negative(X[n, :]) - p_x_1_y[m, :])
 
     g = np.vectorize(f)
-    result = np.fromfunction(g, shape=(N, M), dtype=float)
-    result *= p_y
+    result = np.fromfunction(g, shape=(N, M), dtype=int) * p_y
     result /= result @ np.ones(shape=(4, 1))
 
     return result
@@ -205,13 +203,15 @@ def model_selection_nb(Xtrain, Xval, ytrain, yval, a_values, b_values):
     p_y = estimate_a_priori_nb(ytrain)
 
     def f(a, b):
-        p_x_y_nb = estimate_p_x_y_nb(Xtrain, ytrain, a_values[int(a)], b_values[int(b)])
+        if b==0:
+            print(a)
+        p_x_y_nb = estimate_p_x_y_nb(Xtrain, ytrain, a_values[a], b_values[b])
         p_y_x = p_y_x_nb(p_y, p_x_y_nb, Xval)
         err = classification_error(p_y_x, yval)
         return err
 
     g = np.vectorize(f)
-    errors = np.fromfunction(g, shape=(A, B), dtype=float)
+    errors = np.fromfunction(g, shape=(A, B), dtype=int)
 
     min = np.argmin(errors)
     minA = min // A
