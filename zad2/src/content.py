@@ -23,13 +23,14 @@ def hamming_distance(X, X_train):
     """
     X = X.toarray()
     X_train = X_train.toarray()
-
-    def f(i, j):
-        return X.shape[1] * dist.hamming(X[i], X_train[j])
-        # return sum(X[i] != X_train[j])
-
-    f = np.vectorize(f)
-    return np.fromfunction(f, shape=(X.shape[0], X_train.shape[0]), dtype=int)
+    #
+    # def f(i, j):
+    #     return X.shape[1] * dist.hamming(X[i], X_train[j])
+    #     # return sum(X[i] != X_train[j])
+    #
+    # f = np.vectorize(f)
+    # return np.fromfunction(f, shape=(X.shape[0], X_train.shape[0]), dtype=int)
+    return dist.cdist(X, X_train, metric='hamming') * X.shape[1]
     # return np.array([X.shape[1] * dist.hamming(X[x / N2], X_train[x % N2]) for x in range(N1 * N2)]).reshape((N1, N2))
 
 def sort_train_labels_knn(Dist, y):
@@ -125,9 +126,7 @@ def estimate_p_x_y_nb(Xtrain, ytrain, a, b):
     x sa niezalezne od siebie. Funkcja zwraca macierz p_x_y o wymiarach MxD.
     """
     Xtrain = Xtrain.toarray()
-    N = Xtrain.shape[0]
-    D = Xtrain.shape[1]
-    a_priori = estimate_a_priori_nb(ytrain) * N
+    a_priori = estimate_a_priori_nb(ytrain) * Xtrain.shape[0]
     upAddition = a - 1.0
     downAddition = a + b - 2.0
 
@@ -152,7 +151,7 @@ def estimate_p_x_y_nb(Xtrain, ytrain, a, b):
         return up / down
 
     g = np.vectorize(f)
-    return np.fromfunction(g, shape=(4, D), dtype=float)
+    return np.fromfunction(g, shape=(4, Xtrain.shape[1]), dtype=float)
 
 
 def p_y_x_nb(p_y, p_x_1_y, X):
