@@ -7,13 +7,16 @@
 # --------------------------------------------------------------------------
 
 import numpy as np
+from scipy.special import expit
 
-def sigmoid(x):
-    '''
-    :param x: wektor wejsciowych wartosci Nx1
-    :return: wektor wyjściowych wartości funkcji sigmoidalnej dla wejścia x, Nx1
-    '''
-    pass
+
+# def sigmoid(x):
+#     '''
+#     :param x: wektor wejsciowych wartosci Nx1
+#     :return: wektor wyjściowych wartości funkcji sigmoidalnej dla wejścia x, Nx1
+#     '''
+#     return expit(x)
+sigmoid = expit
 
 
 def logistic_cost_function(w, x_train, y_train):
@@ -23,6 +26,16 @@ def logistic_cost_function(w, x_train, y_train):
     :param y_train: ciag treningowy - wyjscia Nx1
     :return: funkcja zwraca krotke (val, grad), gdzie val oznacza wartosc funkcji logistycznej, a grad jej gradient po w
     '''
+    sigma0 = sigmoid(w.transpose() @ x_train[0])
+    sigma1 = sigmoid(w.transpose() @ x_train[1])
+    sigma2 = sigmoid(w.transpose() @ x_train[2])
+
+    sigma = sigmoid(w.transpose() @ x_train.transpose()).transpose()
+    withif =  np.abs(sigma + y_train - 1)
+    log = np.log(withif)
+    log_ = -sum(log)
+    shape_ = log_ / x_train.shape[0]
+    return (shape_, log / x_train.shape[0])
     pass
 
 
