@@ -10,6 +10,7 @@ from __future__ import division
 import numpy as np
 import datetime
 import scipy.spatial.distance as dist
+import scipy.sparse as sp
 
 
 def hamming_distance(X, X_train):

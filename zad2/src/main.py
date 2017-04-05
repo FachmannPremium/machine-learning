@@ -20,6 +20,7 @@ from test import TestRunner
 import timeit
 
 
+
 def plot_a_b_errors(errors, a_points, b_points):
     fig = plt.figure()
     ax = fig.add_subplot(111)

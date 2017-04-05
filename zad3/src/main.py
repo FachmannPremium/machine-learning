@@ -8,10 +8,11 @@ import pickle
 import numpy as np
 from utils import hog
 from time import sleep
-from zadanie3.test import TestRunner
-from zadanie3.content import (sigmoid, logistic_cost_function, gradient_descent,
+from test import TestRunner
+from content import (sigmoid, logistic_cost_function, gradient_descent,
                               stochastic_gradient_descent, regularized_logistic_cost_function,
                               prediction, f_measure, model_selection)
+from datetime import datetime as time
 
 PICKLE_FILE_PATH = 'data.pkl'
 TEST_FILE_PATH = 'test_data.pkl'
@@ -201,7 +202,9 @@ def run_training():
 
 
 if __name__ == "__main__":
+    print(time.now())
     warnings.filterwarnings('ignore')
     run_unittests()
 
     run_training()
+    print(time.now())
