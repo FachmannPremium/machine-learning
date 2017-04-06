@@ -9,6 +9,7 @@
 from __future__ import division
 import numpy as np
 import scipy.spatial.distance as dist
+import scipy.sparse as sp
 
 
 def hamming_distance(X, X_train):
@@ -27,6 +28,68 @@ def hamming_distance(X, X_train):
     to_return = dist.cdist(X, X_train, "hamming")
     to_return = (to_return * X.shape[1]).astype(int)
     return to_return
+
+
+
+def hamming_distance2(X, X_train):
+    X = X.toarray()
+    X_train = X_train.toarray()
+
+    X_train = X_train.transpose()
+
+    outArr = X.astype(np.uint8) @ X_train.astype(np.uint8)
+    outArr += (~X).astype(np.uint8) @ (~X_train).astype(np.uint8)
+    return np.subtract(np.uint8(X_train.shape[0]), outArr)
+
+
+def calc_distance(X, X_train):
+    X_train = X_train.transpose()
+
+    outArr = X.astype(np.uint8) @ X_train.astype(np.uint8)
+    outArr += (~X).astype(np.uint8) @ (~X_train).astype(np.uint8)
+    return np.subtract(np.uint8(X_train.shape[0]), outArr)
+
+
+def hamming_distance3(X, X_train):
+    X = X.toarray()
+    X_train = X_train.toarray()
+
+    MAX_PROCESSES = 4
+
+    futures = []
+    arrays = np.split(X, MAX_PROCESSES)
+
+    from concurrent.futures import ProcessPoolExecutor, Future
+    with ProcessPoolExecutor(max_workers=MAX_PROCESSES) as executor:
+        for i in range(MAX_PROCESSES):
+            futures.append(executor.submit(calc_distance, arrays[i], X_train))
+
+    futures = list(map(Future.result, futures))
+
+    return np.concatenate(futures)
+
+
+def calc_distance2(X, X_train):
+    return dist.cdist(X, X_train, metric='hamming') * X.shape[1]
+
+
+def hamming_distance4(X, X_train):
+    X = X.toarray()
+    X_train = X_train.toarray()
+
+    MAX_PROCESSES = 4
+
+    futures = []
+    arrays = np.split(X, MAX_PROCESSES)
+
+    from concurrent.futures import ProcessPoolExecutor, Future
+    with ProcessPoolExecutor(max_workers=MAX_PROCESSES) as executor:
+        for i in range(MAX_PROCESSES):
+            futures.append(executor.submit(calc_distance2, arrays[i], X_train))
+
+    futures = list(map(Future.result, futures))
+
+    return np.concatenate(futures)
 
 
 def sort_train_labels_knn(Dist, y):
@@ -137,6 +200,7 @@ def estimate_p_x_y_nb(Xtrain, ytrain, a, b):
     up_factor = a - 1.0
     down_factor = a + b - 2.0
 
+<<<<<<< HEAD
     def f(k, d):
         I_yn_k = (ytrain == k + 1).astype(bool)
         I_xnd_1 = (Xtrain[:, d] == 1).astype(bool)
@@ -147,6 +211,26 @@ def estimate_p_x_y_nb(Xtrain, ytrain, a, b):
     g = np.vectorize(f)
     return np.fromfunction(g, shape=(4, Xtrain.shape[1]), dtype=int)
     # theta{d,k}
+=======
+    result = np.zeros(shape=(4, Xtrain.shape[1]))
+    for d in range(Xtrain.shape[1]):
+        for k in range(4):
+            result[k, d] = (upAddition + sum((ytrain == k + 1) & (Xtrain[:, d] == 1)))
+        result[:, d] /= (downAddition + a_priori)
+
+    return result
+    # def f(k, d):
+    #     up = upAddition + sum((ytrain == k + 1) & (Xtrain[:, d] == 1))
+    #     down = downAddition + a_priori[k]
+    #     # for n in range(N):
+    #     #     if ((ytrain[n] == k + 1) and (Xtrain[n, d] == 1)):
+    #     #         up += 1.0
+    #
+    #     return up / down
+    #
+    # g = np.vectorize(f)
+    # return np.fromfunction(g, shape=(4, Xtrain.shape[1]), dtype=int)
+>>>>>>> 4e42f12324152f165c8568d96afb8b4479783e85
 
 
 def p_y_x_nb(p_y, p_x_1_y, X):
@@ -222,7 +306,14 @@ def model_selection_nb(Xtrain, Xval, ytrain, yval, a_values, b_values):
     g = np.vectorize(f)
     errors = np.fromfunction(g, shape=(A, B), dtype=int)
 
+<<<<<<< HEAD
     minimum = np.argmin(errors)
     minA = minimum // A
     minB = minimum % A
     return errors[minA, minB], a_values[minA], b_values[minB], errors
+=======
+    min = np.argmin(errors)
+    minA = min // A
+    minB = min % A
+    return (errors[minA, minB], a_values[minA], b_values[minB], errors)
+>>>>>>> 4e42f12324152f165c8568d96afb8b4479783e85

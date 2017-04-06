@@ -8,19 +8,22 @@ import pickle
 import numpy as np
 from utils import hog
 from time import sleep
-from zadanie3.test import TestRunner
-from zadanie3.content import (sigmoid, logistic_cost_function, gradient_descent,
-                              stochastic_gradient_descent, regularized_logistic_cost_function,
-                              prediction, f_measure, model_selection)
+from test import TestRunner
+from content import (sigmoid, logistic_cost_function, gradient_descent,
+                     stochastic_gradient_descent, regularized_logistic_cost_function,
+                     prediction, f_measure, model_selection)
+from datetime import datetime as time
 
 PICKLE_FILE_PATH = 'data.pkl'
 TEST_FILE_PATH = 'test_data.pkl'
 EPOCHS = 100
 MINIBATCH_SIZE = 50
-PATCH_WIDTH = 92
-PATCH_HEIGHT = 112
-STEP = 20
+ratio = 0.6
+PATCH_WIDTH = int(92 * ratio)
+PATCH_HEIGHT = int(112 * ratio)
+STEP = 15
 marker_positions = []
+
 
 def load_test():
     with open(TEST_FILE_PATH, 'rb') as f:
@@ -33,8 +36,6 @@ def load_data():
 
 
 def plot_f_values(f1, f2):
-    plt.rcParams['image.cmap'] = 'gray'
-    plt.rcParams['image.interpolation'] = 'none'
     plt.style.use(['dark_background'])
     xs = range(len(f1))
 
@@ -70,6 +71,7 @@ def plot_theta_lambda(F_vals, theta_vals, lambda_vals):
     plt.draw()
     plt.waitforbuttonpress(0)
 
+
 def face_detect_patch(patch, w, theta):
     patch = patch / 255.0
     hog_patch = hog(patch)
@@ -85,7 +87,7 @@ def get_patch(img, x, y):
 def animate(i, ax, patch, patch_positions, img, w, theta):
     markers = []
     for position in marker_positions:
-        markers.append(patches.Rectangle(position, PATCH_WIDTH, PATCH_HEIGHT, fill=False, color='g',linewidth=3))
+        markers.append(patches.Rectangle(position, PATCH_WIDTH, PATCH_HEIGHT, fill=False, color='g', linewidth=3))
 
     for marker in markers:
         ax.add_patch(marker)
@@ -101,7 +103,7 @@ def animate(i, ax, patch, patch_positions, img, w, theta):
     if face_detect_patch(cut_out, w, theta):
         marker_position = [x, img_size[0] - PATCH_HEIGHT - y]
         marker_positions.append(marker_position)
-        marker = patches.Rectangle(marker_position, PATCH_WIDTH, PATCH_HEIGHT, fill=False, color='g',linewidth=3)
+        marker = patches.Rectangle(marker_position, PATCH_WIDTH, PATCH_HEIGHT, fill=False, color='g', linewidth=3)
         ax.add_patch(marker)
         markers.append(marker)
 
@@ -110,8 +112,9 @@ def animate(i, ax, patch, patch_positions, img, w, theta):
 
 def animate_face_detect(w, theta):
     marker_positions = []
-    img = mpimg.imread('image2017.jpg')
-    fig = plt.figure(figsize=(7.5, 4.23))
+
+    img = mpimg.imread('wigilia.jpg')
+    fig = plt.figure(figsize=(6.4, 4.8))
     plt.axis('equal')
     plt.tight_layout()
     ax = fig.add_subplot(111)
@@ -120,7 +123,7 @@ def animate_face_detect(w, theta):
     ax.xaxis.set_tick_params(labelbottom=False, labeltop=False, top=False, bottom=False)
     ax.yaxis.set_tick_params(left=False, labelleft=False)
 
-    patch = patches.Rectangle((PATCH_WIDTH, PATCH_HEIGHT), 100, 120, fill=False, color='r',linewidth=3)
+    patch = patches.Rectangle((PATCH_WIDTH, PATCH_HEIGHT),PATCH_WIDTH, PATCH_HEIGHT, fill=False, color='r', linewidth=3)
 
     ax.imshow(img, extent=[0, img.shape[1], 0, img.shape[0]], aspect='auto', interpolation="bicubic")
     ax.add_patch(patch)
@@ -129,12 +132,11 @@ def animate_face_detect(w, theta):
     for y in range(0, img.shape[0] - PATCH_HEIGHT, STEP):
         for x in range(0, img.shape[1] - PATCH_WIDTH, STEP):
             patch_positions.append([x, y])
-
     fargs = [ax, patch, patch_positions, img, w, theta]
     anim = animation.FuncAnimation(fig, animate,
                                    fargs=fargs,
-                                   #init_func=self.initialize_animation,
-                                   frames=200,
+                                   # init_func=self.initialize_animation,
+                                   frames=len(patch_positions),
                                    interval=2,
                                    blit=True, repeat=False)
     plt.draw()
@@ -150,7 +152,6 @@ def run_unittests():
 
 
 def run_training():
-
     data = load_data()
 
     print('----------Uczenie regresji logistycznej metodą gradientu prostego--------')
@@ -158,7 +159,7 @@ def run_training():
 
     eta = 0.1
     theta = 0.65
-    lambdas = [0, 0.00001, 0.0001, 0.001, 0.01, 0.1]
+    lambdas = [0, 0.00001, 0.0001, 0.001, 0.01, 0.1, 0.2]
     thetas = list(np.arange(0.1, 0.9, 0.05))
 
     log_cost_for_data = functools.partial(logistic_cost_function, x_train=data['x_train'], y_train=data['y_train'])
@@ -172,11 +173,11 @@ def run_training():
 
     w_0 = np.zeros([data['x_train'].shape[1], 1])
     w_computed2, f_values2 = stochastic_gradient_descent(logistic_cost_function, data['x_train'],
-                                                       data['y_train'], w_0, EPOCHS, eta, MINIBATCH_SIZE)
+                                                         data['y_train'], w_0, EPOCHS, eta, MINIBATCH_SIZE)
 
     print('Wartość funkcji celu na końcu: {:.4f}'.format(f_values2[-1][0]))
     print('\n--- Wcisnij klawisz, aby kontynuowac ---')
-    plot_f_values(f_values1, f_values2)
+    ##### plot_f_values(f_values1, f_values2)
 
     print('\n-----------------------Selekcja modelu -------------------------------')
     print('--Algorytm uczący: SGD--')
@@ -193,15 +194,23 @@ def run_training():
     print('Najlepszy prog klasyfikacji theta: {:.4f}'.format(t))
     print('Najlepsza wartosc miary F: {:.4f}'.format(np.max(F)))
     print('\n--- Wcisnij klawisz, aby kontynuowac ---')
-    plot_theta_lambda(F, thetas, lambdas)
+    ##### plot_theta_lambda(F, thetas, lambdas)
 
     print('\n------------------------DETEKCJA TWARZY-------------------------------\n')
     animate_face_detect(w_computed, t)
 
 
-
 if __name__ == "__main__":
+    plt.rcParams['image.cmap'] = 'gray'
+    plt.rcParams['image.interpolation'] = 'none'
+    now = time.now()
+    print(now)
     warnings.filterwarnings('ignore')
     run_unittests()
 
     run_training()
+    print(time.now())
+    print(time.now()- now)
+
+    # 0:00:57.185409
+    # 0:00:56.cos

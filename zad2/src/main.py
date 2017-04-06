@@ -9,7 +9,7 @@
 # ----------------- TEN PLIK MA POZOSTAC NIEZMODYFIKOWANY ------------------
 # --------------------------------------------------------------------------
 
-from content import (hamming_distance, sort_train_labels_knn, model_selection_knn, model_selection_nb, estimate_p_x_y_nb,
+from content import (hamming_distance,hamming_distance2,hamming_distance3,hamming_distance4, sort_train_labels_knn, model_selection_knn, model_selection_nb, estimate_p_x_y_nb,
                               classification_error, estimate_a_priori_nb, p_y_x_nb, p_y_x_knn)
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,6 +17,8 @@ import pickle
 import warnings
 from time import sleep
 from test import TestRunner
+import timeit
+
 
 
 def plot_a_b_errors(errors, a_points, b_points):
@@ -107,10 +109,33 @@ def load_data():
     with open(PICKLE_FILE_PATH, 'rb') as f:
         return pickle.load(f)
 
+data = load_data()
+
+def f_test1():
+    hamming_distance(data['Xtest'], data['Xtrain'])
+
+def f_test2():
+    hamming_distance2(data['Xtest'], data['Xtrain'])
+
+def f_test3():
+    hamming_distance3(data['Xtest'], data['Xtrain'])
+
+def f_test4():
+    hamming_distance4(data['Xtest'], data['Xtrain'])
+
 
 def run_training():
 
     data = load_data()
+
+    print(hamming_distance(data['Xtest'], data['Xtrain']) == hamming_distance2(data['Xtest'], data['Xtrain']))
+    print(hamming_distance(data['Xtest'], data['Xtrain']) == hamming_distance3(data['Xtest'], data['Xtrain']))
+
+    i = 10
+    print("hamming_distance\t", timeit.Timer('f_test1()', "from __main__ import f_test1").timeit(number=i))
+    print("hamming_distance2\t", timeit.Timer('f_test2()', "from __main__ import f_test2").timeit(number=i))
+    print("hamming_distance3\t", timeit.Timer('f_test3()', "from __main__ import f_test3").timeit(number=i))
+
 
     # KNN model selection
     k_values = range(1, 201, 2)
