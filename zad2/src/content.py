@@ -8,7 +8,6 @@
 
 from __future__ import division
 import numpy as np
-import datetime
 import scipy.spatial.distance as dist
 
 
@@ -17,21 +16,18 @@ def hamming_distance(X, X_train):
     :param X: zbior porownwanych obiektow N1xD
     :param X_train: zbior obiektow do ktorych porownujemy N2xD
     Funkcja wyznacza odleglosci Hamminga obiektow ze zbioru X od
-    obiektow X_train. Odleglosci obiektow z jednego i drugiego
+    obiektow X_train. ODleglosci obiektow z jednego i drugiego
     zbioru zwrocone zostana w postaci macierzy
     :return: macierz odleglosci pomiedzy obiektami z X i X_train N1xN2
     """
+
     X = X.toarray()
     X_train = X_train.toarray()
-    #
-    # def f(i, j):
-    #     return X.shape[1] * dist.hamming(X[i], X_train[j])
-    #     # return sum(X[i] != X_train[j])
-    #
-    # f = np.vectorize(f)
-    # return np.fromfunction(f, shape=(X.shape[0], X_train.shape[0]), dtype=int)
-    return dist.cdist(X, X_train, metric='hamming') * X.shape[1]
-    # return np.array([X.shape[1] * dist.hamming(X[x / N2], X_train[x % N2]) for x in range(N1 * N2)]).reshape((N1, N2))
+
+    to_return = dist.cdist(X, X_train, "hamming")
+    to_return = (to_return * X.shape[1]).astype(int)
+    return to_return
+
 
 def sort_train_labels_knn(Dist, y):
     """
@@ -48,10 +44,9 @@ def sort_train_labels_knn(Dist, y):
     wartosci podobienstw odpowiadajacego wiersza macierzy
     Dist. Uzyc algorytmu mergesort.
     """
-
-    index_array = np.argsort(Dist, kind='mergesort')
-    return np.fromfunction(lambda i, j: y[index_array[i, j]], (Dist.shape[0], Dist.shape[1]), dtype=int)
-    # return np.array([y[index_array[int(x / N2), x % N2]] for x in range(N1 * N2)]).reshape((N1, N2))
+    indices_to_sort = np.argsort(Dist, kind="mergesort")
+    ret = np.fromfunction(lambda i, j: y[indices_to_sort[i, j]], shape=Dist.shape, dtype=int)
+    return ret
 
 
 def p_y_x_knn(y, k):
@@ -63,12 +58,18 @@ def p_y_x_knn(y, k):
     :param k: liczba najblizszuch sasiadow dla KNN
     :return: macierz prawdopodobienstw dla obiektow z X
     """
+    number_of_classes = np.unique(y[0, :]).shape[0]
+    # number_of_classes = 4
 
-    def f(yi, kj):
-        return np.count_nonzero(y[yi, :k] == (kj + 1)) / k
+    y = y[:, :k]
+    ret = np.zeros(shape=(y.shape[0], number_of_classes), dtype=float)
 
-    f = np.vectorize(f)
-    return np.fromfunction(f, shape=(y.shape[0], 4), dtype=int)
+    for j in range(ret.shape[0]):
+        for i in range(ret.shape[1]):
+            ret[j, i] = np.count_nonzero((y[j, :]) == (i + 1))
+
+    ret = ret / k
+    return ret
 
 
 def classification_error(p_y_x, y_true):
@@ -79,29 +80,34 @@ def classification_error(p_y_x, y_true):
     Kazdy wiersz macierzy reprezentuje rozklad p(y|x)
     :return: blad klasyfikacji
     """
-    N1 = np.shape(p_y_x)[0]
+    N1 = p_y_x.shape[0]
     result = 0
-    for i in range(N1):
-        a = p_y_x[i].tolist()
-        if (4 - a[::-1].index(max(a)) != y_true[i]):
-            result += 1
-    return result / N1
+    rev_p_y_x = np.fliplr(p_y_x)
+    to_comp = 4 - np.argmax(a=rev_p_y_x, axis=1)
+    result = to_comp - y_true
+    return (np.count_nonzero(result)) / N1
 
 
 def model_selection_knn(Xval, Xtrain, yval, ytrain, k_values):
     """
-    :param Xval: zbiór danych walidacyjnych N1xD
-    :param Xtrain: zbiór danych treningowych N2xD
+    :param Xval: zbior danych walidacyjnych N1xD
+    :param Xtrain: zbior danych treningowych N2xD
     :param yval: etykiety klas dla danych walidacyjnych 1xN1
     :param ytrain: etykiety klas dla danych treningowych 1xN2
     :param k_values: wartosci parametru k, ktore maja zostac sprawdzone
     :return: funkcja wykonuje selekcje modelu knn i zwraca krotke (best_error,best_k,errors), gdzie best_error to najnizszy
     osiagniety blad, best_k - k dla ktorego blad byl najnizszy, errors - lista wartosci bledow dla kolejnych k z k_values
     """
-    y_sorted = sort_train_labels_knn(hamming_distance(Xval, Xtrain), ytrain)
-    error_values = [classification_error(p_y_x_knn(y_sorted, k), yval) for k in k_values]
-    min_error = min(error_values)
-    return (min_error, k_values[error_values.index(min_error)], error_values)
+
+    distance = hamming_distance(Xval, Xtrain)
+    y_sorted = sort_train_labels_knn(distance, ytrain)
+    errors = []
+    for k in k_values:
+        error_k = classification_error(p_y_x_knn(y_sorted, k), yval)
+        errors.append(error_k)
+    best_error = min(errors)  # min error
+    best_k = k_values[errors.index(best_error)]
+    return best_error, best_k, errors
 
 
 def estimate_a_priori_nb(ytrain):
@@ -109,11 +115,12 @@ def estimate_a_priori_nb(ytrain):
     :param ytrain: etykiety dla dla danych treningowych 1xN
     :return: funkcja wyznacza rozklad a priori p(y) i zwraca p_y - wektor prawdopodobienstw a priori 1xM
     """
-    Ninverse = 1 / ytrain.shape[0]
-    array = np.zeros(shape=(4))
-    for y in ytrain:
-        array[y - 1] += Ninverse
-    return array
+    N = ytrain.shape[0]
+    res = np.zeros(shape=(4))
+    for i in range(1, 5):
+        res[i - 1] = np.count_nonzero(ytrain == i) / N
+    return res
+    # p-stwo y-tej klasy
 
 
 def estimate_p_x_y_nb(Xtrain, ytrain, a, b):
@@ -125,33 +132,21 @@ def estimate_p_x_y_nb(Xtrain, ytrain, a, b):
     :return: funkcja wyznacza rozklad prawdopodobienstwa p(x|y) zakladajac, ze x przyjmuje wartosci binarne i ze elementy
     x sa niezalezne od siebie. Funkcja zwraca macierz p_x_y o wymiarach MxD.
     """
+
     Xtrain = Xtrain.toarray()
-    a_priori = estimate_a_priori_nb(ytrain) * Xtrain.shape[0]
-    upAddition = a - 1.0
-    downAddition = a + b - 2.0
+    up_factor = a - 1.0
+    down_factor = a + b - 2.0
 
-    # result = np.zeros(shape=(M, D))
-    # for d in range(D):
-    #     for m in range(M):
-    #         result[m, d] = upAddition
-    #         denominator = downAddition
-    #         for n in range(N):
-    #             if (ytrain[n] == m + 1):
-    #                 if (Xtrain[n, d] == 1):
-    #                     result[m, d] += 1.0
-    #                 denominator += 1.0
-    #         result[m, d] /= denominator
     def f(k, d):
-        up = upAddition + sum((ytrain == k + 1) & (Xtrain[:, d] == 1))
-        down = downAddition + a_priori[k]
-        # for n in range(N):
-        #     if ((ytrain[n] == k + 1) and (Xtrain[n, d] == 1)):
-        #         up += 1.0
-
+        I_yn_k = (ytrain == k + 1).astype(bool)
+        I_xnd_1 = (Xtrain[:, d] == 1).astype(bool)
+        up = up_factor + np.count_nonzero(I_yn_k & I_xnd_1)
+        down = down_factor + np.count_nonzero(I_yn_k)
         return up / down
 
     g = np.vectorize(f)
     return np.fromfunction(g, shape=(4, Xtrain.shape[1]), dtype=int)
+    # theta{d,k}
 
 
 def p_y_x_nb(p_y, p_x_1_y, X):
@@ -162,16 +157,32 @@ def p_y_x_nb(p_y, p_x_1_y, X):
     :return: funkcja wyznacza rozklad prawdopodobienstwa p(y|x) dla kazdej z klas z wykorzystaniem klasyfikatora Naiwnego
     Bayesa. Funkcja zwraca macierz p_y_x o wymiarach NxM.
     """
+    # wwolne
+    #
+    # N = np.shape(X)[0]
+    # D = np.shape(X)[1]
+    # M = np.shape(p_y)[0]
+    #
+    # result = np.ones(shape=(N, M))
+    #
+    # for n in range(N):
+    #     denominator = 0.0
+    #     for m in range(M):
+    #         for d in range(D):
+    #             if X[n, d] == 1:
+    #                 result[n, m] *= p_x_1_y[m, d]
+    #             else:
+    #                 result[n, m] *= 1 - p_x_1_y[m, d]
+    #         result[n, m] *= p_y[m]
+    #         denominator += result[n, m]
+    #     result[n] /= denominator
+    # return result
+
+    # najlepsze
+
     N = np.shape(X)[0]
     M = np.shape(p_y)[0]
     X = X.toarray()
-
-    # temp_array = np.prod(np.array([np.array(
-    #     [np.array([p_x_1_y[m, d] if (X[n, d] == 1) else (1 - p_x_1_y[m, d]) for n in range(N)]) for m in range(M)]) for
-    #                                d in range(D)]), axis=0).transpose()
-    # temp_2 = np.array([temp_array[n] * p_y for n in range(N)])
-    # array = np.array([temp_2[n] / sum(temp_2[n]) for n in range(N)])
-    # return array
 
     def f(n, m):
         return np.prod(np.negative(X[n, :]) - p_x_1_y[m, :])
@@ -203,8 +214,6 @@ def model_selection_nb(Xtrain, Xval, ytrain, yval, a_values, b_values):
     p_y = estimate_a_priori_nb(ytrain)
 
     def f(a, b):
-        if b==0:
-            print(a)
         p_x_y_nb = estimate_p_x_y_nb(Xtrain, ytrain, a_values[a], b_values[b])
         p_y_x = p_y_x_nb(p_y, p_x_y_nb, Xval)
         err = classification_error(p_y_x, yval)
@@ -213,7 +222,7 @@ def model_selection_nb(Xtrain, Xval, ytrain, yval, a_values, b_values):
     g = np.vectorize(f)
     errors = np.fromfunction(g, shape=(A, B), dtype=int)
 
-    min = np.argmin(errors)
-    minA = min // A
-    minB = min % A
-    return (errors[minA,minB], a_values[minA], b_values[minB], errors)
+    minimum = np.argmin(errors)
+    minA = minimum // A
+    minB = minimum % A
+    return errors[minA, minB], a_values[minA], b_values[minB], errors
